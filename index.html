@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Copilot App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex;">
+
+    <div id="main-content" style="flex-grow: 1;">
+        <div id="current-path">/</div>
+        <div id="file-explorer"></div>
+
+        <div id="editor-container">
+            <h3>Edit File: <span id="editing-file-path">None</span></h3>
+            <textarea id="file-editor-textarea" rows="15" cols="80"></textarea>
+            <br>
+        <button id="save-file-button" class="button-primary">Save File</button>
+            <p id="save-status"></p>
+        </div>
+    </div>
+
+    <div id="chat-sidebar">
+        <h3>AI Copilot Chat</h3>
+        <div id="chat-messages-container">
+            <!-- Dummy message for styling -->
+            <div class="chat-message user-message">Hello there!</div>
+            <div class="chat-message bot-message">Hi! How can I help you?</div>
+        </div>
+        <div id="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type your message..." autocomplete="off">
+            <button id="send-chat-button" class="button-primary">Send</button>
+            <div id="mention-dropdown"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
