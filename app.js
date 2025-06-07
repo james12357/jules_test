@@ -92,10 +92,10 @@ createFile: function(path, content = '') {
         path: constructedPath, // Corrected from fullPath
         content: content
     };
-
+    this.save();
     return true;
 }
-    return true;
+    // return true; // Original return true was here, moved after save
 },
 
 readFile: function(path) {
@@ -140,10 +140,10 @@ updateFile: function(path, newContent) {
     }
 
     current.content = newContent;
+    this.save();
     return true;
 }
-    current.content = newContent;
-    return true;
+    // return true; // Original return true was here
 },
 
 deleteFile: function(path) {
@@ -173,10 +173,10 @@ deleteFile: function(path) {
     }
 
     delete parent.children[targetName];
+    this.save();
     return true;
 }
-    delete parent.children[targetName];
-    return true;
+    // return true; // Original return true was here
 },
 
 deleteDirectory: function(path) {
@@ -211,10 +211,10 @@ deleteDirectory: function(path) {
     }
 
     delete parent.children[targetName];
+    this.save();
     return true;
 }
-    delete parent.children[targetName];
-    return true;
+    // return true; // Original return true was here
 },
 
 listDirectoryContents: function(path) {
@@ -283,8 +283,106 @@ createDirectory: function(path) {
     };
 
     return true;
+},
+
+save: function() {
+    try {
+        const vfsJson = JSON.stringify(this.data);
+        localStorage.setItem('aiCopilotVFS', vfsJson);
+        console.log("VFS saved to localStorage.");
+    } catch (e) {
+        console.error("Error saving VFS to localStorage:", e);
+    }
+},
+
+load: function() {
+    try {
+        const vfsJson = localStorage.getItem('aiCopilotVFS');
+        if (vfsJson) {
+            const parsedVfs = JSON.parse(vfsJson);
+            if (parsedVfs) {
+                this.data = parsedVfs;
+                console.log("VFS loaded from localStorage.");
+                return true;
+            }
+        } else {
+            console.log("No VFS data found in localStorage, initializing default.");
+            this.data = { '/': { type: 'directory', name: '/', path: '/', children: {} } };
+            return false; // No data found, but initialized
+        }
+    } catch (e) {
+        console.error("Error loading VFS from localStorage or parsing data:", e);
+        // Fallback to default if loading or parsing fails
+        this.data = { '/': { type: 'directory', name: '/', path: '/', children: {} } };
+    }
+    return false; // Error occurred or no data
 }
 }; // End of VFS object
+
+/*
+--------------------------------------------------------------------------------
+MANUAL UI TESTING CHECKLIST - GENERAL FLOW
+--------------------------------------------------------------------------------
+
+1.  **Initial Load & Layout:**
+    *   Page loads without console errors.
+    *   Default VFS (sample files or from localStorage) is displayed in File Explorer.
+    *   Editor is initially hidden.
+    *   Chat shows a welcome message.
+    *   Layout is 3-column (Explorer, Editor placeholder, Chat).
+
+2.  **File Explorer Interaction:**
+    *   Navigate into folders (e.g., `/documents`). Path display updates.
+    *   Navigate up using ".." button. Path display updates.
+    *   Click on a file (e.g., `/readme.txt`).
+        *   Editor becomes visible.
+        *   File path shown above editor.
+        *   File content loaded into textarea.
+
+3.  **Editor Interaction:**
+    *   Modify content of the opened file.
+    *   Click "Save File" button.
+        *   Status message indicates success.
+        *   (Verify persistence by refreshing page or re-opening file - content should be updated).
+
+4.  **Chat Command Interaction (see detailed VFS/Chat testing below):**
+    *   Use various VFS commands (`create file`, `read file`, `ls`, etc.).
+        *   Observe chat for bot responses (success/error messages).
+        *   Observe File Explorer for UI updates (new files/folders, deletions).
+        *   Observe Editor if an open file is modified or deleted via chat.
+
+5.  **@Mention Feature:**
+    *   In chat input, type "@" followed by part of a known filename (e.g., "@read").
+        *   Dropdown appears with suggestions.
+        *   `currentlyEditingPath` (if any) should be prioritized.
+    *   Click a suggestion.
+        *   Selected file path inserted into chat input.
+        *   Dropdown disappears.
+    *   Test hiding dropdown (Escape key, blur, click outside).
+
+6.  **Persistence:**
+    *   Create a new file/folder via chat or UI.
+    *   Modify a file and save it.
+    *   Refresh the page.
+        *   All changes (new items, modifications, deletions) should persist.
+    *   Open browser dev tools -> Application -> localStorage.
+        *   Clear the 'aiCopilotVFS' item.
+        *   Refresh page.
+        *   VFS should reset to its default sample data state.
+
+7.  **Responsive Layout:**
+    *   Resize browser window to be narrow (e.g., < 768px).
+        *   Layout should switch to single-column stack (Explorer, Editor, Chat).
+        *   Each section should be scrollable independently if content overflows.
+    *   Resize back to wider view.
+        *   Layout should revert to 3-column.
+
+8.  **Error States (General):**
+    *   Try invalid chat commands (e.g., `foo bar`). Expect helpful error from bot.
+    *   Try operations that should fail (e.g., `create file /existing_file.txt`). Expect error message.
+    *   Try deleting a non-empty folder. Expect error.
+
+*/
 
 // UI Rendering Functions
 const fileExplorerDiv = document.getElementById('file-explorer');
@@ -349,7 +447,8 @@ function tool_delete_file(path) {
             currentlyEditingPath = null;
             editingFilePathSpan.textContent = 'None';
             fileEditorTextarea.value = '';
-            editorContainer.style.display = 'none';
+            editorContainer.classList.remove('visible'); // USE CLASS
+            // editorContainer.style.display = 'none'; // CSS handles default hidden state via #editor-container
             saveStatusP.textContent = `File ${path} was deleted.`;
         }
         renderFileExplorer(getParentPath(path));
@@ -366,7 +465,8 @@ function tool_delete_folder(path) {
             currentlyEditingPath = null;
             editingFilePathSpan.textContent = 'None';
             fileEditorTextarea.value = '';
-            editorContainer.style.display = 'none';
+            editorContainer.classList.remove('visible'); // USE CLASS
+            // editorContainer.style.display = 'none'; // CSS handles default hidden state
             saveStatusP.textContent = `The folder containing the open file ${currentlyEditingPath} was deleted.`;
         }
         renderFileExplorer(getParentPath(path));
@@ -739,8 +839,9 @@ function renderFileExplorer(targetPath = '/') {
                 editingFilePathSpan.textContent = itemPath;
                 const content = VFS.readFile(itemPath); // USE VFS
                 fileEditorTextarea.value = content !== null ? content : '';
-                editorContainer.style.display = 'block';
-                saveStatusP.textContent = ''; // Clear previous status
+                editorContainer.classList.add('visible'); // USE CLASS
+                // editorContainer.style.display = ''; // Remove direct style manipulation for display
+                saveStatusP.textContent = '';
             };
         }
         fileExplorerDiv.appendChild(itemDiv);
@@ -768,20 +869,26 @@ if (saveFileButton) {
 
 // Initial render
 document.addEventListener('DOMContentLoaded', () => {
-    if (!fileExplorerDiv || !currentPathDiv || !editorContainer || !editingFilePathSpan || !fileEditorTextarea || !saveFileButton || !saveStatusP || !chatMessagesContainer || !chatInput || !sendChatButton ) {
+    if (!fileExplorerDiv || !currentPathDiv || !editorContainer || !editingFilePathSpan || !fileEditorTextarea || !saveFileButton || !saveStatusP || !chatMessagesContainer || !chatInput || !sendChatButton || !mentionDropdown) {
         console.error("One or more UI elements are missing from the DOM. Core functionality might be affected.");
     }
 
-    // Create some initial files/folders for testing
-    VFS.createDirectory('/documents'); // USE VFS
-    VFS.createFile('/documents/notes.txt', 'This is a note.'); // USE VFS
-    VFS.createDirectory('/documents/work'); // USE VFS
-    VFS.createFile('/documents/work/report.docx', 'Work report content.'); // USE VFS
-    VFS.createFile('/readme.txt', 'Hello VFS!'); // USE VFS
-    VFS.createDirectory('/empty_folder'); // USE VFS
+    const loadedFromStorage = VFS.load(); // Load VFS from localStorage
 
-    renderFileExplorer('/');
-    displayMessage("Welcome to the AI Copilot! Type 'help' to see available commands.", "Bot"); // Welcome message
+    if (!loadedFromStorage) {
+        // If nothing was loaded (e.g., first visit or cleared storage), create sample data
+        console.log("Creating initial sample data for VFS.");
+        VFS.createDirectory('/documents');
+        VFS.createFile('/documents/notes.txt', 'This is a note about VFS persistence.');
+        VFS.createDirectory('/documents/work');
+        VFS.createFile('/documents/work/report.docx', 'Work report content will be saved.');
+        VFS.createFile('/readme.txt', 'Hello VFS! Your files will be saved in localStorage.');
+        VFS.createDirectory('/empty_folder');
+        // Note: createFile/createDirectory already call VFS.save() if successful
+    }
+
+    renderFileExplorer('/'); // Render the file explorer with loaded or initial VFS data
+    displayMessage("Welcome to the AI Copilot! Type 'help' to see available commands.", "Bot");
 });
 
 // AI Tool Functions (to be called by the AI model)
@@ -804,12 +911,117 @@ function tool_add_file(path, content = '') {
     }
 }
 
-function tool_add_folder(path) {
-    const success = VFS.createDirectory(path);
-    if (success) {
-        renderFileExplorer(getParentPath(path));
-        return `Directory \`${path}\` created successfully.`;
-    } else {
-        return `Error: Could not create directory \`${path}\`. It might already exist or the path is invalid.`;
-    }
-}
+/*
+--------------------------------------------------------------------------------
+MANUAL TESTING GUIDE - VFS & CHAT COMMANDS
+--------------------------------------------------------------------------------
+
+**Setup:**
+- Open browser console to see logs/errors.
+- For persistence tests, know how to clear localStorage for the site.
+
+**1. `create file <path> [content]`**
+   - Command: `create file /test_file.txt This is test content.`
+   - Expect UI:
+     - `/test_file.txt` appears in File Explorer under root.
+     - Chat Bot: "File `/test_file.txt` created successfully."
+   - Command: `create file /docs/new_doc.txt More content here` (assuming /docs doesn't exist yet)
+   - Expect UI:
+     - `/docs/` folder appears in File Explorer.
+     - `new_doc.txt` appears inside `/docs/`.
+     - Chat Bot: "File `/docs/new_doc.txt` created successfully."
+   - Command: `create file /test_file.txt This will fail.` (file already exists)
+   - Expect UI:
+     - No change in File Explorer.
+     - Chat Bot: "Error: Could not create file `/test_file.txt`. It might already exist or the path is invalid."
+
+**2. `read file <path>`**
+   - Command: `read file /test_file.txt`
+   - Expect UI:
+     - Chat Bot: "Content of `/test_file.txt`:
+       ```
+       This is test content.
+       ```"
+   - Command: `read file /non_existent_file.txt`
+   - Expect UI:
+     - Chat Bot: "Error: Could not read file `/non_existent_file.txt`. It might not exist or is not a file."
+
+**3. `write file <path> <content>`**
+   - Command: `write file /test_file.txt Updated content.`
+   - Expect UI:
+     - Chat Bot: "File `/test_file.txt` updated successfully."
+   - Verification: `read file /test_file.txt` -> Shows "Updated content."
+   - If `/test_file.txt` is open in editor: Editor textarea updates to "Updated content."
+   - Command: `write file /non_existent_file.txt New content`
+   - Expect UI:
+     - Chat Bot: "Error: Could not update file `/non_existent_file.txt`. It might not exist or is not a file."
+
+**4. `list files [path]` or `ls [path]`**
+   - Command: `ls` (or `list files`)
+   - Expect UI: Chat Bot lists contents of current directory (e.g., `/` if that's current).
+   - Command: `ls /docs` (assuming /docs and new_doc.txt exist)
+   - Expect UI: Chat Bot: "Contents of `/docs`:
+     - new_doc.txt (file)"
+   - Command: `ls /non_existent_folder`
+   - Expect UI: Chat Bot: "Error: Could not list contents of `/non_existent_folder`. It might not exist or is not a directory."
+
+**5. `create folder <path>` or `mkdir <path>`**
+   - Command: `mkdir /my_new_folder`
+   - Expect UI:
+     - `/my_new_folder/` appears in File Explorer.
+     - Chat Bot: "Directory `/my_new_folder` created successfully."
+   - Command: `mkdir /my_new_folder` (already exists)
+   - Expect UI: Chat Bot: "Error: Could not create directory `/my_new_folder`. It might already exist or the path is invalid."
+
+**6. `delete file <path>`**
+   - Command: `delete file /docs/new_doc.txt`
+   - Expect UI:
+     - `new_doc.txt` disappears from `/docs/` in File Explorer.
+     - Chat Bot: "File `/docs/new_doc.txt` deleted successfully."
+   - If `/docs/new_doc.txt` was open in editor: Editor clears, path display updates, editor might hide.
+   - Command: `delete file /non_existent_file.txt`
+   - Expect UI: Chat Bot: "Error: Could not delete file `/non_existent_file.txt`. It might not exist or is not a file."
+
+**7. `delete folder <path>` or `rmdir <path>`**
+   - Command: `rmdir /my_new_folder` (assuming it's empty)
+   - Expect UI:
+     - `/my_new_folder/` disappears from File Explorer.
+     - Chat Bot: "Directory `/my_new_folder` deleted successfully."
+   - Command: `mkdir /folder_with_file` then `create file /folder_with_file/temp.txt`
+   - Command: `rmdir /folder_with_file` (not empty)
+   - Expect UI: Chat Bot: "Error: Could not delete directory `/folder_with_file`. It might not exist, not be a directory, or is not empty."
+   - Cleanup: `delete file /folder_with_file/temp.txt` then `rmdir /folder_with_file`
+
+**8. @Mention Feature Testing:**
+   - Ensure some files exist (e.g., `/readme.txt`, `/documents/notes.txt`).
+   - In chat input, type `@read` -> Dropdown should show `/readme.txt`.
+   - Type `@doc` -> Dropdown should show `/documents/notes.txt`.
+   - Type `@notes` -> Dropdown should show `/documents/notes.txt`.
+   - Click on a suggestion -> Path inserted into chat input, replacing the `@query`.
+   - Test with currently open file: Open `/readme.txt` in editor. Type `@read` -> `/readme.txt` should ideally be at the top of suggestions.
+
+**9. Persistence Testing:**
+   - Create a file: `create file /persistent_test.txt I should survive refresh.`
+   - Create a folder: `mkdir /persistent_folder`
+   - Refresh the page (F5 or Cmd+R/Ctrl+R).
+   - Expect UI:
+     - `/persistent_test.txt` and `/persistent_folder/` are still in File Explorer.
+     - Content of `/persistent_test.txt` is "I should survive refresh." (verify with `read file` or opening in editor).
+   - Delete one of them: `delete file /persistent_test.txt`
+   - Refresh again.
+   - Expect UI: `/persistent_test.txt` is gone, `/persistent_folder/` remains.
+   - **Clear localStorage:**
+     - Open browser Developer Tools.
+     - Go to Application -> localStorage -> find the entry for the current domain (e.g., 'aiCopilotVFS').
+     - Delete the item.
+     - Refresh the page.
+     - Expect UI: VFS is reset to its initial sample data state (e.g., `/readme.txt`, `/documents/notes.txt` etc., but not the persistent_ ones).
+
+**10. General Error Handling & Edge Cases:**
+    - Invalid command: `blahblah` -> Expect: "Unknown command..."
+    - Command with missing args: `create file` -> Expect: "Missing path..."
+    - Path issues: `create file inv@lid/path.txt` (VFS might handle this gracefully or not, observe)
+    - Content with quotes: `create file /quoted.txt "This content has quotes"` -> verify content.
+    - Very long file names or content.
+    - Rapid commands.
+*/
