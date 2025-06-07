@@ -4,59 +4,66 @@ body {
     margin: 0;
     height: 100vh;
     display: flex;
-    background-color: #f4f7f6; /* Light gray-greenish background */
-    color: #333; /* Darker text for readability */
+    flex-direction: row; /* Ensure it's row for 3-column */
+    background-color: #f4f7f6;
+    color: #333;
 }
 
-#main-content {
-    flex-grow: 1;
-    padding: 15px; /* Increased padding */
+/* Column Base Styling */
+#file-explorer, #editor-container, #chat-sidebar {
+    height: 100vh;
     overflow-y: auto;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff; /* White background for main content area */
-    box-shadow: 0 0 10px rgba(0,0,0,0.05); /* Subtle shadow for depth */
-    margin: 5px; /* Small margin around main content */
-    border-radius: 8px; /* Rounded corners */
 }
+
+/* Specific Column Widths & Separators */
+#file-explorer {
+    flex: 0.25;
+    background-color: #ffffff;
+    border-right: 1px solid #d1d9e0;
+    padding: 0; /* #current-path and items will handle padding */
+}
+
+#editor-container {
+    flex: 0.45; /* Adjusted flex for editor */
+    background-color: #fdfdfd;
+    border-right: 1px solid #d1d9e0;
+    display: none; /* Keep initially hidden */
+    padding: 15px; /* Padding for editor content */
+}
+#editor-container.visible { /* Class to show editor */
+    display: flex !important;
+}
+
 
 #chat-sidebar {
-    width: 320px; /* Slightly wider */
-    min-width: 280px; /* Minimum width */
-    border-left: 1px solid #d1d9e0; /* Softer border */
-    background-color: #e9edf0; /* Light blue-gray background for sidebar */
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.05); /* Shadow on the left side */
+    flex: 0.30; /* Adjusted flex for chat */
+    min-width: 300px;
+    background-color: #e9edf0;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+    padding: 0; /* Header, messages, input area handle their own padding */
+    /* No border-left needed as editor has border-right */
 }
 
-/* Current Path / Breadcrumb Styling */
+
+/* Current Path / Breadcrumb Styling - Child of #file-explorer */
 #current-path {
-    padding: 12px 15px; /* More padding */
-    background-color: #e9edf0; /* Consistent with sidebar bg */
-    border-bottom: 1px solid #d1d9e0; /* Softer border */
+    padding: 12px 15px;
+    background-color: #f0f4f7;
+    border-bottom: 1px solid #d1d9e0;
     font-size: 0.95em;
-    color: #2c3e50; /* Dark blue-gray text */
-    /* border-radius: 6px 6px 0 0; /* Rounded top corners if it's at the very top of its own block */
+    color: #2c3e50;
+    flex-shrink: 0;
 }
 
-/* File Explorer Styling */
-#file-explorer {
-    padding: 0; /* Remove padding if items have it, or set to small value like 5px */
-    flex-grow: 1;
-    flex-shrink: 1;
-    overflow-y: auto;
-    border: 1px solid #e1e8ed; /* Softer border for the container */
-    border-radius: 6px;
-    background-color: #fdfdfe; /* Slightly off-white */
-    margin-bottom: 15px; /* Space before editor */
-}
-
+/* File Explorer Item List - items are rendered directly into #file-explorer by JS */
+/* #file-explorer has flex-direction:column, #current-path is flex-shrink:0, so list items will take remaining space and scroll */
 .explorer-item {
     padding: 8px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #f0f4f7; /* Lighter separator */
+    border-bottom: 1px solid #f0f4f7;
     display: flex;
     align-items: center;
     font-size: 0.9em;
@@ -69,43 +76,33 @@ body {
 }
 
 .explorer-item:hover {
-    background-color: #e9f2f9; /* Light blue hover */
+    background-color: #e9f2f9;
 }
 
-.explorer-item::before { /* General styling for icons */
+.explorer-item::before {
     margin-right: 8px;
     font-size: 1.1em;
 }
 
 .directory-item::before {
-    content: "📁"; /* Folder unicode character */
-    color: #f39c12; /* Orange for folders */
+    content: "📁";
+    color: #f39c12;
 }
 
 .file-item::before {
-    content: "📄"; /* File unicode character */
-    color: #3498db; /* Blue for files */
+    content: "📄";
+    color: #3498db;
 }
 
-#editor-container {
-    margin-top: 0; /* file-explorer now has margin-bottom */
-    padding: 20px;
-    border: 1px solid #e1e8ed;
-    background-color: #fdfdfe;
-    display: none; /* Keep initially hidden */
-    flex-grow: 2; /* Editor should take more space when visible */
-    flex-shrink: 0; /* Don't shrink as much as explorer if space is tight */
-    display: flex;
-    flex-direction: column;
-    border-radius: 6px;
-}
-
+/* Editor Styling Adjustments for Column Layout */
+/* #editor-container settings are above */
 #editing-file-path {
     font-size: 1.1em;
     color: #2c3e50;
     margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #e1e8ed;
+    flex-shrink: 0;
 }
 
 #file-editor-textarea {
@@ -148,33 +145,37 @@ body {
     background-color: #2471a3;
 }
 
-#save-file-button { /* Inherits .button-primary */
+#save-file-button {
     align-self: flex-start;
+    flex-shrink: 0;
 }
 
 #save-status {
     margin-top: 10px;
     font-style: italic;
     color: #555;
+    flex-shrink: 0;
 }
 
-/* Chat Sidebar Styling Adjustments */
+/* Chat Sidebar Styling Adjustments for Column Layout */
+/* #chat-sidebar settings are above */
 #chat-sidebar h3 {
     padding: 15px;
     margin: 0;
-    background-color: #d1d9e0; /* Darker header for chat */
+    background-color: #d1d9e0;
     color: #2c3e50;
     text-align: center;
     font-size: 1.2em;
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 #chat-messages-container {
-    flex-grow: 1;
+    flex-grow: 1; /* Takes available vertical space */
     overflow-y: auto;
-    padding: 15px;
+    padding: 15px; /* Padding for messages */
     border-bottom: 1px solid #d1d9e0;
-    background-color: #f4f7f6; /* Match global body for message area */
+    background-color: #f4f7f6;
 }
 
 .chat-message {
@@ -184,39 +185,40 @@ body {
     max-width: 85%;
     word-wrap: break-word;
     line-height: 1.4;
-    white-space: pre-wrap; /* Respect newlines */
+    white-space: pre-wrap;
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .user-message {
-    background-color: #3498db; /* User messages in primary blue */
+    background-color: #3498db;
     color: white;
     margin-left: auto;
-    border-radius: 12px 12px 0 12px; /* Different rounding for user */
+    border-radius: 12px 12px 0 12px;
 }
 
 .bot-message {
-    background-color: #ffffff; /* Bot messages in white */
+    background-color: #ffffff;
     color: #333;
-    border: 1px solid #e1e8ed; /* Subtle border for bot messages */
+    border: 1px solid #e1e8ed;
     margin-right: auto;
-    border-radius: 12px 12px 12px 0; /* Different rounding for bot */
+    border-radius: 12px 12px 12px 0;
 }
 
 #chat-input-area {
     display: flex;
     padding: 12px;
-    background-color: #e9edf0; /* Consistent with sidebar bg */
-    border-top: 1px solid #d1d9e0; /* Separator line */
+    background-color: #e9edf0;
+    border-top: 1px solid #d1d9e0;
     position: relative;
+    flex-shrink: 0;
 }
 
 #chat-input {
     flex-grow: 1;
     padding: 10px 12px;
     border: 1px solid #d1d9e0;
-    border-radius: 20px; /* Pill shape */
-    margin-right: 8px; /* Space to button */
+    border-radius: 20px;
+    margin-right: 8px;
     font-size: 0.95em;
 }
 
@@ -226,9 +228,10 @@ body {
     box-shadow: 0 0 0 2px rgba(160, 180, 200, 0.2);
 }
 
-#send-chat-button { /* Inherits .button-primary */
+#send-chat-button {
     min-width: 70px;
-    border-radius: 20px; /* Pill shape to match input */
+    border-radius: 20px;
+    flex-shrink: 0;
 }
 
 
@@ -236,23 +239,23 @@ body {
 #mention-dropdown {
     display: none;
     position: absolute;
-    bottom: calc(100% + 5px); /* Position above input area, with small gap */
-    left: 10px; /* Align with chat input padding */
+    bottom: calc(100% + 5px);
+    left: 10px;
     right: 10px;
     background-color: #ffffff;
-    border: 1px solid #d1d9e0; /* Consistent border */
-    border-radius: 6px; /* Rounded corners */
-    max-height: 180px; /* Increased height */
+    border: 1px solid #d1d9e0;
+    border-radius: 6px;
+    max-height: 180px;
     overflow-y: auto;
     z-index: 1000;
-    box-shadow: 0 -3px 8px rgba(0,0,0,0.1); /* Softer, more modern shadow */
+    box-shadow: 0 -3px 8px rgba(0,0,0,0.1);
 }
 
 .mention-item {
-    padding: 10px 15px; /* More padding */
+    padding: 10px 15px;
     cursor: pointer;
     font-size: 0.9em;
-    border-bottom: 1px solid #e1e8ed; /* Softer separator */
+    border-bottom: 1px solid #e1e8ed;
     color: #2c3e50;
 }
 
@@ -260,30 +263,42 @@ body {
     border-bottom: none;
 }
 
-.mention-item:hover, .mention-item.active-suggestion { /* For keyboard nav later */
-    background-color: #e9edf0; /* Consistent hover */
+.mention-item:hover, .mention-item.active-suggestion {
+    background-color: #e9edf0;
     color: #1c2833;
 }
 
 /* Responsive (Basic Example) */
 @media (max-width: 768px) {
     body {
-        flex-direction: column;
+        flex-direction: column; /* Stack columns vertically */
     }
 
-    #main-content {
-        margin: 0;
-        border-radius: 0;
-        height: 60vh; /* Example height, adjust as needed */
-        padding: 10px; /* Reduce padding on mobile */
+    #file-explorer, #editor-container, #chat-sidebar {
+        width: 100% !important; /* Override flex-basis/grow */
+        flex: none !important; /* Override flex property */
+        height: auto; /* Allow content to define height, or set specific vh portions */
+        border-right: none; /* Remove vertical borders */
+        border-bottom: 1px solid #d1d9e0; /* Add bottom border for separation */
+        /* overflow-y: visible; /* Or keep auto, depends on desired mobile scroll */
+    }
+
+    #file-explorer {
+        min-height: 25vh; /* Minimum height */
+        /* padding: 10px; /* Restore some padding for mobile if needed */
+    }
+    #editor-container {
+        min-height: 35vh; /* Minimum height */
+         /* padding: 10px; */
+    }
+    #editor-container.visible { /* JS will need to toggle this class for mobile */
+        display: flex !important;
     }
 
     #chat-sidebar {
-        width: 100%;
-        height: 40vh; /* Example height, adjust as needed */
-        border-left: none;
-        border-top: 1px solid #d1d9e0;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+        min-height: 40vh; /* Minimum height */
+        border-bottom: none; /* Last item, no bottom border */
+        /* padding: 0; /* Chat specific padding is handled by children */
     }
 
     #chat-sidebar h3 {
@@ -293,6 +308,7 @@ body {
 
     #chat-messages-container {
         padding: 10px;
+        /* Consider a max-height for messages on mobile if overall chat sidebar height is not fixed */
     }
 
     .chat-message {
@@ -306,13 +322,13 @@ body {
     #chat-input {
         padding: 8px 10px;
     }
-    .button-primary, #send-chat-button { /* Ensure buttons are not too large */
+    .button-primary, #send-chat-button {
         padding: 8px 12px;
         font-size: 0.9em;
     }
 
     #mention-dropdown {
-        max-height: 120px; /* Reduce max height on mobile */
+        max-height: 120px;
         left: 5px;
         right: 5px;
         bottom: calc(100% + 3px);

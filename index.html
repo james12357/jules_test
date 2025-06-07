@@ -6,19 +6,19 @@
     <title>AI Copilot App</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body style="display: flex;">
+<body> <!-- Removed inline style, will be handled by CSS file -->
 
-    <div id="main-content" style="flex-grow: 1;">
+    <div id="file-explorer">
         <div id="current-path">/</div>
-        <div id="file-explorer"></div>
+        <!-- File explorer items will be rendered here by JS -->
+    </div>
 
-        <div id="editor-container">
-            <h3>Edit File: <span id="editing-file-path">None</span></h3>
-            <textarea id="file-editor-textarea" rows="15" cols="80"></textarea>
-            <br>
+    <div id="editor-container">
+        <h3>Edit File: <span id="editing-file-path">None</span></h3>
+        <textarea id="file-editor-textarea" rows="15" cols="80"></textarea>
+        <br>
         <button id="save-file-button" class="button-primary">Save File</button>
-            <p id="save-status"></p>
-        </div>
+        <p id="save-status"></p>
     </div>
 
     <div id="chat-sidebar">
